@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Circuit Design Q&A Tutor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface-2: #18181f; --border: #2a2a38;
+      --accent: #00e5ff; --accent-dim: rgba(0,229,255,0.1);
+      --amber: #ffb300; --amber-dim: rgba(255,179,0,0.1);
+      --green: #00e676; --green-dim: rgba(0,230,118,0.1);
+      --text: #e8e8f0; --text-dim: #888899; --text-muted: #4a4a60;
+      --mono: 'Space Mono', monospace; --display: 'Syne', sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 14px; line-height: 1.7; min-height: 100vh; }
+    header { border-bottom: 1px solid var(--border); padding: 14px 24px; }
+    .logo { font-family: var(--display); font-weight: 800; font-size: 18px; color: var(--accent); }
+    main { max-width: 820px; margin: 0 auto; padding: 40px 24px 80px; }
+    h1 { font-family: var(--display); font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .chip { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-family: var(--mono); font-size: 12px; padding: 5px 12px; border-radius: 100px; cursor: pointer; transition: all 0.15s; }
+    .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 14px; padding: 14px; resize: vertical; min-height: 110px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    textarea::placeholder { color: var(--text-muted); }
+    textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .submit-row { display: flex; justify-content: flex-end; margin-top: 12px; }
+    button#submit-btn { background: var(--accent); color: #000; border: none; font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; padding: 11px 26px; border-radius: 4px; cursor: pointer; transition: opacity 0.15s, transform 0.15s; }
+    button#submit-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    button#submit-btn:active { transform: translateY(0); }
+    button#submit-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+    #status-bar { min-height: 28px; margin: 16px 0; }
+    .status-msg { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.3; transform:scale(0.7); } }
+    .status-error { color: #ff5252; }
+    .status-error .dot { background: #ff5252; animation: none; }
+    .cards { display: flex; flex-direction: column; gap: 10px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; cursor: pointer; user-select: none; }
+    .card-header:hover { background: var(--surface-2); }
+    .card-header-left { display: flex; align-items: center; gap: 10px; }
+    .card-icon { width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .card[data-type="theory"] .card-icon { background: var(--accent-dim); }
+    .card[data-type="calculations"] .card-icon { background: var(--amber-dim); }
+    .card[data-type="improvements"] .card-icon { background: var(--green-dim); }
+    .card-title { font-family: var(--display); font-size: 14px; font-weight: 700; }
+    .card[data-type="theory"] .card-title { color: var(--accent); }
+    .card[data-type="calculations"] .card-title { color: var(--amber); }
+    .card[data-type="improvements"] .card-title { color: var(--green); }
+    .chevron { color: var(--text-muted); font-size: 10px; transition: transform 0.25s; }
+    .card.open .chevron { transform: rotate(180deg); }
+    .card-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+    .card.open .card-body { max-height: 2000px; }
+    .card-content { padding: 4px 16px 16px; border-top: 1px solid var(--border); font-size: 13.5px; line-height: 1.8; }
+    .card-content p { margin-bottom: 8px; }
+    .card-content p:last-child { margin-bottom: 0; }
+    .skel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; }
+    .skel-line { height: 11px; background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size: 200% 100%; border-radius: 100px; margin-bottom: 10px; animation: shimmer 1.4s infinite; }
+    .skel-line.title { height: 16px; width: 40%; margin-bottom: 14px; }
+    .skel-line.w80 { width: 80%; }
+    .skel-line.w60 { width: 60%; }
+    .skel-line.w45 { width: 45%; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @media (max-width: 600px) { main { padding: 24px 16px 60px; } h1 { font-size: 22px; } button#submit-btn { width: 100%; } .submit-row { justify-content: stretch; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">CircuitTutor</div>
+  </header>
+  <main>
+    <h1>Describe your circuit problem</h1>
+    <p class="subtitle">Gemini explains the theory, walks through calculations, and suggests design improvements.</p>
+    <div class="chips" id="chips"></div>
+    <textarea id="circuit-input" placeholder="e.g. I have a 9V battery and want to power an LED with 20mA forward current. How do I calculate the resistor value?" rows="5"></textarea>
+    <div class="submit-row">
+      <button id="submit-btn">Analyze →</button>
+    </div>
+    <div id="status-bar"></div>
+    <div class="cards" id="cards"></div>
+  </main>
+  <script>
+    const EXAMPLES = [
+      "LED circuit with 3.3V and 10mA",
+      "RC low-pass filter at 1kHz cutoff",
+      "Voltage divider: 12V to 5V output",
+      "NPN transistor switch for a relay"
+    ]
+    const CARDS_DEF = [
+      { type: 'theory', icon: '📡', label: 'Theory & Principles' },
+      { type: 'calculations', icon: '🔢', label: 'Step-by-Step Calculations' },
+      { type: 'improvements', icon: '⚙️', label: 'Design Improvements' }
+    ]
+    const textarea = document.getElementById('circuit-input')
+    const submitBtn = document.getElementById('submit-btn')
+    const statusBar = document.getElementById('status-bar')
+    const cardsEl = document.getElementById('cards')
+    const chipsEl = document.getElementById('chips')
+    const history = []
+
+    EXAMPLES.forEach(ex => {
+      const btn = document.createElement('button')
+      btn.className = 'chip'
+      btn.textContent = ex
+      btn.onclick = () => { textarea.value = ex; textarea.focus() }
+      chipsEl.appendChild(btn)
+    })
+
+    textarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitBtn.click()
+    })
+
+    function setInputDisabled(v) {
+      submitBtn.disabled = v
+      textarea.disabled = v
+    }
+
+    function setStatus(msg, isError = false) {
+      statusBar.innerHTML = msg
+        ? `<div class="status-msg ${isError ? 'status-error' : ''}"><span class="dot"></span>${msg}</div>`
+        : ''
+    }
+
+    function showSkeletons() {
+      cardsEl.innerHTML = CARDS_DEF.map(() => `
+        <div class="skel">
+          <div class="skel-line title"></div>
+          <div class="skel-line w80"></div>
+          <div class="skel-line w60"></div>
+          <div class="skel-line w45"></div>
+        </div>
+      `).join('')
+    }
+
+    function toParas(text) {
+      if (!text) return '<p>No content.</p>'
+      return text.split('\n').filter(l => l.trim()).map(l => `<p>${l}</p>`).join('')
+    }
+
+    function showCards({ theory, calculations, improvements }) {
+      const data = { theory, calculations, improvements }
+      cardsEl.innerHTML = CARDS_DEF.map(({ type, icon, label }) => `
+        <div class="card open" data-type="${type}">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-icon">${icon}</div>
+              <span class="card-title">${label}</span>
+            </div>
+            <span class="chevron">▼</span>
+          </div>
+          <div class="card-body">
+            <div class="card-content" id="cc-${type}">
+              ${toParas(data[type])}
+            </div>
+          </div>
+        </div>
+      `).join('')
+      cardsEl.querySelectorAll('.card-header').forEach(h => {
+        h.addEventListener('click', () => h.closest('.card').classList.toggle('open'))
+      })
+      CARDS_DEF.forEach(({ type }) => {
+        const el = document.getElementById(`cc-${type}`)
+        if (el && window.renderMathInElement) {
+          window.renderMathInElement(el, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '$', right: '$', display: false }
+            ],
+            throwOnError: false
+          })
+        }
+      })
+      cardsEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
+    async function askTutor(messages) {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ messages })
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      const input = textarea.value.trim()
+      if (!input) { textarea.focus(); return }
+      history.push({ role: 'user', content: input })
+      setInputDisabled(true)
+      setStatus('Analyzing...')
+      showSkeletons()
+      try {
+        const result = await askTutor([...history])
+        history.push({ role: 'assistant', content: JSON.stringify(result) })
+        setStatus('')
+        showCards(result)
+      } catch (err) {
+        setStatus('Something went wrong. Try again.', true)
+        cardsEl.innerHTML = ''
+        console.error(err)
+      } finally {
+        setInputDisabled(false)
+      }
+    })
+  </script>
+</body>
+</html>
